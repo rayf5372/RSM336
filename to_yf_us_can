@@ -1,0 +1,71 @@
+import csv, os, re
+
+INPUT_PATH = r'C:\Users\rfang\Documents\RSM336\Company Screening Report.csv'
+FOLDER = os.path.dirname(INPUT_PATH)
+OUTPUT_PATH = os.path.join(FOLDER, 'yf_us_can.csv')
+OUTPUT_TXT_PATH = os.path.join(FOLDER, 'yf_us_can.txt')
+
+SUFFIX_MAP = {
+    # US (no suffix)
+    "NASDAQGS": "", "NASDAQGM": "", "NASDAQCM": "", "NASDAQ": "",
+    "NYSE": "", "ARCA": "", "NYSEARCA": "", "NYSE AMERICAN": "",
+    "AMEX": "", "CBOE": "", "BATS": "", "NEW YORK STOCK EXCHANGE": "",
+    "NASDAQ GLOBAL SELECT": "", "NASDAQ GLOBAL MARKET": "", "NASDAQ CAPITAL MARKET": "",
+    # Canada
+    "TSX": ".TO", "TORONTO STOCK EXCHANGE": ".TO", "XTSE": ".TO",
+    "TSXV": ".V", "TSX VENTURE": ".V", "TSX VENTURE EXCHANGE": ".V", "CVE": ".V",
+    "NEO": ".NE", "NEO EXCHANGE": ".NE",
+}
+
+def norm_exchange(x: str) -> str:
+    x = (x or '').strip().upper()
+    return re.sub(r'\s+', ' ', x)
+
+def to_yahoo(val: str) -> tuple[str, str]:
+    """
+    Convert 'Exchange:Symbol' -> (ticker, original)
+    Returns (ticker, original_string)
+    """
+    original = val.strip()
+    if ':' not in original:
+        # already a bare ticker, assume US
+        return original.upper(), original
+
+    ex, sym = [p.strip() for p in original.split(':', 1)]
+    ex_norm = norm_exchange(ex)
+    sym_u = sym.upper()
+
+    for key, suf in SUFFIX_MAP.items():
+        if key in ex_norm:
+            return f"{sym_u}{suf}", original
+    # default: assume US (no suffix)
+    return sym_u, original
+
+# --- Read input (single-column CSV, no header is fine) ---
+with open(INPUT_PATH, 'r', encoding='utf-8-sig', newline='') as f:
+    reader = csv.reader(f)
+    rows = [r[0].strip() for r in reader if r and r[0].strip()]
+
+# --- Convert & de-duplicate ---
+seen = set()
+converted_rows = []  # list of dicts: {"ticker": ..., "original": ...}
+for raw in rows:
+    ticker, original = to_yahoo(raw)
+    if ticker and ticker not in seen:
+        seen.add(ticker)
+        converted_rows.append({"ticker": ticker, "original": original})
+
+# --- Write CSV ---
+with open(OUTPUT_PATH, 'w', encoding='utf-8', newline='') as f:
+    w = csv.DictWriter(f, fieldnames=['ticker', 'original'])
+    w.writeheader()
+    w.writerows(converted_rows)
+
+# --- Write plain list (one per line) ---
+with open(OUTPUT_TXT_PATH, 'w', encoding='utf-8') as f:
+    for row in converted_rows:
+        f.write(row['ticker'] + '\n')
+
+print(f"Converted {len(rows)} inputs -> {len(converted_rows)} unique Yahoo tickers.")
+print(f"Wrote: {OUTPUT_PATH}")
+print(f"Wrote: {OUTPUT_TXT_PATH}")
