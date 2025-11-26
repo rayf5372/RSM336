@@ -58,15 +58,6 @@ MOM_TICKERS = [
     "NVDA"        # NVIDIA (US)
 ]
 
-TSX_ETFS = {
-    "XIT.TO": "Information Technology",
-    "XEG.TO": "Energy",
-    "XFN.TO": "Financials",
-    "XRE.TO": "Real Estate",
-    
- 
-}
-
 START_DATE = "2025-10-06"
 END_DATE   = "2025-11-14"
 
@@ -158,6 +149,17 @@ if __name__ == "__main__":
     print("==== Sleeve Returns ({} to {}) ====".format(START_DATE, END_DATE))
     print(f"Value sleeve total return:     {value_total:.2%}")
     print(f"Momentum sleeve total return:  {mom_total:.2%}")
+    
+    # Volatility (Standard Deviation) analysis
+    value_volatility = value_rets.std() * (252**0.5)  # Annualized volatility
+    mom_volatility = mom_rets.std() * (252**0.5)      # Annualized volatility
+    value_vol_daily = value_rets.std()                # Daily volatility
+    mom_vol_daily = mom_rets.std()                    # Daily volatility
+    
+    print(f"\nValue sleeve daily volatility:     {value_vol_daily:.4f} ({value_vol_daily:.2%})")
+    print(f"Momentum sleeve daily volatility:  {mom_vol_daily:.4f} ({mom_vol_daily:.2%})")
+    print(f"Value sleeve annualized volatility:     {value_volatility:.2%}")
+    print(f"Momentum sleeve annualized volatility:  {mom_volatility:.2%}")
 
     # 5) Correlation analysis
     corr_daily    = mom_rets.corr(value_rets)
