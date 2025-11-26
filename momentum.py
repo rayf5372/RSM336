@@ -98,13 +98,10 @@ def main():
     top10 = out[out["pct_rank"] > 0.90].sort_values("rank")[["ticker","mom_12_1","rank","pct_rank"]]
     bot10 = out[out["pct_rank"] <= 0.10].sort_values("rank")[["ticker","mom_12_1","rank","pct_rank"]]
 
-    # 6) Save
     top_path = os.path.join(OUT_DIR, "top_10pct.csv")
     bot_path = os.path.join(OUT_DIR, "bottom_10pct.csv")
     top10.to_csv(top_path, index=False)
     bot10.to_csv(bot_path, index=False)
-
-    print(f"Done.\n  {top_path}\n  {bot_path}")
 
 if __name__ == "__main__":
     main()
